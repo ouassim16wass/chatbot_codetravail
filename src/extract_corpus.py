@@ -1,11 +1,3 @@
-"""Extraction du corpus depuis les fichiers XML LEGI (jalon 1).
-
-Parcourt les fichiers XML d'articles du Code du travail, ne garde que les
-versions en vigueur appartenant aux themes du sujet, nettoie le texte et
-produit data/corpus.json : une liste homogene de documents avec identifiant,
-texte et metadonnees (numero d'article, theme, section, source).
-"""
-
 import json
 import random
 import re
@@ -22,11 +14,6 @@ ARTICLES_DIR = (
 )
 SORTIE = BASE_DIR / "data" / "corpus.json"
 
-# Themes du sujet : (nom, premier article, dernier article).
-# Un numero comme "L1237-14" est compare sous la forme (1237, 14).
-# L'ordre est important : la rupture conventionnelle (L1237-11 a 19) est
-# incluse dans la plage du licenciement, elle-meme incluse dans celle du
-# contrat de travail ; on teste donc du plus specifique au plus large.
 THEMES = [
     ("Rupture conventionnelle", (1237, 11), (1237, 19)),
     ("Licenciement", (1231, 1), (1237, 20)),
@@ -40,8 +27,6 @@ THEMES = [
 
 
 def cle_numero(numero):
-    """Transforme "L1237-14" en (1237, 14) pour comparer des plages.
-    Retourne None si le numero n'a pas cette forme (annexes, tables...)."""
     m = re.match(r"^L(\d+)-(\d+)", numero)
     if not m:
         return None
@@ -49,7 +34,6 @@ def cle_numero(numero):
 
 
 def theme_de(numero):
-    """Retourne le theme du sujet auquel appartient l'article, sinon None."""
     cle = cle_numero(numero)
     if cle is None:
         return None
@@ -60,13 +44,10 @@ def theme_de(numero):
 
 
 def nettoyer(texte):
-    """Supprime les espaces multiples et les restes de mise en forme."""
     return re.sub(r"\s+", " ", texte).strip()
 
 
 def lire_article(chemin):
-    """Lit un fichier XML d'article. Retourne un document (dict) si l'article
-    est en vigueur et appartient a un theme retenu, sinon None."""
     racine = ET.parse(chemin).getroot()
 
     etat = racine.findtext(".//META_ARTICLE/ETAT")
@@ -78,8 +59,6 @@ def lire_article(chemin):
     if theme is None:
         return None
 
-    # Texte de l'article : itertext() recupere le texte en ignorant les
-    # balises de mise en forme (<p>, <br/>) heritees de Legifrance
     contenu = racine.find(".//BLOC_TEXTUEL/CONTENU")
     if contenu is None:
         return None
@@ -87,8 +66,6 @@ def lire_article(chemin):
     if not texte:
         return None
 
-    # Section de rattachement : les titres dont la date de fin est 2999
-    # sont ceux actuellement en vigueur ; le dernier est le plus precis
     titres = [
         nettoyer(t.text or "")
         for t in racine.iter("TITRE_TM")
@@ -112,8 +89,6 @@ def main():
         doc = lire_article(chemin)
         if doc is None:
             continue
-        # Securite : si deux versions d'un meme article se disent en vigueur,
-        # on garde la plus recente
         existant = documents.get(doc["numero"])
         if existant is None or doc["date_debut"] > existant["date_debut"]:
             documents[doc["numero"]] = doc
@@ -130,13 +105,11 @@ def main():
         json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8"
     )
 
-    # Bilan par theme : le sujet exige au moins 5 themes couverts
     print(f"{len(docs)} articles en vigueur extraits vers {SORTIE.name}\n")
     for nom, _, _ in THEMES:
         n = sum(1 for d in docs if d["theme"] == nom)
         print(f"  {nom} : {n} articles")
 
-    # Controle qualite du jalon 1 : relire dix documents au hasard
     print("\n--- Dix documents au hasard, a relire ---")
     for doc in random.sample(docs, min(10, len(docs))):
         print(f"\n[{doc['numero']}] ({doc['theme']}) {doc['section']}")
