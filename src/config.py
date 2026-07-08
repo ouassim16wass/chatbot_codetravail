@@ -1,5 +1,3 @@
-"""Configuration du projet : chemins, modeles et variables d'environnement."""
-
 import os
 from pathlib import Path
 
