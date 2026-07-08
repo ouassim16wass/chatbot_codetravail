@@ -54,21 +54,33 @@ def load_database():
 
 
 def search(collection, modele, question, k=5):
-    """Retourne les k chunks les plus proches de la question, avec leurs
-    metadonnees et un score de similarite entre 0 et 1."""
+    """Retourne les k articles les plus proches de la question, avec leurs
+    metadonnees et un score de similarite entre 0 et 1.
+
+    Un article long est indexe en plusieurs chunks : sans deduplication,
+    ses parties peuvent occuper plusieurs places du top-k et evincer
+    d'autres articles pertinents (constat du jalon 3). On interroge donc
+    plus large, puis on garde le meilleur chunk de chaque article."""
     vecteur = modele.encode([question])
     resultats = collection.query(
-        query_embeddings=vecteur.tolist(), n_results=k
+        query_embeddings=vecteur.tolist(), n_results=k * 3
     )
-    return [
-        {
+    articles = []
+    numeros_vus = set()
+    for document, metadonnees, distance in zip(
+        resultats["documents"][0],
+        resultats["metadatas"][0],
+        resultats["distances"][0],
+    ):
+        numero = metadonnees["numero"]
+        if numero in numeros_vus:
+            continue  # une partie de cet article est deja mieux classee
+        numeros_vus.add(numero)
+        articles.append({
             "texte": document,
             "metadonnees": metadonnees,
             "score": 1 - distance,  # distance cosinus -> similarite
-        }
-        for document, metadonnees, distance in zip(
-            resultats["documents"][0],
-            resultats["metadatas"][0],
-            resultats["distances"][0],
-        )
-    ]
+        })
+        if len(articles) == k:
+            break
+    return articles
