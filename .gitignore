@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Base vectorielle persistee
+chroma_db/
+
+# Editeurs et outils locaux
+.vscode/
+.idea/
+
+# Divers
+*.pdf
+.DS_Store
