@@ -1,11 +1,30 @@
 """Script d'indexation : construit la base vectorielle depuis le corpus
-et la sauvegarde sur disque."""
+et la sauvegarde sur disque. A ne lancer qu'une fois (ou apres une mise a
+jour du corpus) : l'interrogation recharge la base sans reindexer."""
+
+import json
+
+from src.chunking import make_chunks
+from src.config import DATA_DIR
+from src.vector_db import build_database
 
 
 def main():
-    # TODO: charger le corpus (data/), decouper en chunks,
-    # encoder avec le modele d'embedding et persister la base
-    pass
+    corpus = json.loads(
+        (DATA_DIR / "corpus.json").read_text(encoding="utf-8")
+    )
+    chunks = make_chunks(corpus["documents"])
+    print(f"{corpus['nb_documents']} articles -> {len(chunks)} chunks")
+
+    collection = build_database(chunks, corpus["date_corpus"])
+    print(f"Base persistee : {collection.count()} chunks indexes")
+
+    # Controle qualite du jalon 2 : relire quelques chunks avec leurs
+    # metadonnees et verifier qu'aucun n'est coupe en pleine phrase
+    apercu = collection.get(limit=3, include=["documents", "metadatas"])
+    for texte, meta in zip(apercu["documents"], apercu["metadatas"]):
+        print(f"\n[{meta['numero']}] ({meta['theme']}) {meta['section']}")
+        print(f"  {texte[:200]}")
 
 
 if __name__ == "__main__":
