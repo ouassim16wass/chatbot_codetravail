@@ -10,6 +10,9 @@ venv/
 # Base vectorielle persistee
 chroma_db/
 
+# Donnees brutes LEGI (366 Mo, retelechargeables via src/download_corpus.py)
+data/raw/
+
 # Editeurs et outils locaux
 .vscode/
 .idea/
