@@ -44,6 +44,18 @@ function similarite(a, normeA, b, normeB) {
   return produit / (normeA * normeB || 1);
 }
 
+function rendreMarkdown(texte) {
+  const echappe = texte
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return echappe
+    .replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/^\s*[-*] /gm, "• ");
+}
+
+
 function numerosCites(question) {
   const numeros = [];
   for (const m of question.matchAll(/[Ll]\.?\s*(\d{3,4}-\d+(?:-\d+)*)/g)) {
@@ -137,7 +149,7 @@ async function poser() {
       return;
     }
 
-    attente.textContent = donnees.reponse;
+    attente.innerHTML = rendreMarkdown(donnees.reponse);
     const sources = document.createElement("div");
     sources.className = "sources";
     sources.textContent = "Articles sources : " + donnees.sources.join(", ");
