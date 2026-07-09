@@ -47,7 +47,11 @@ def generate_answer(question, chunks, date_corpus):
     texte = "".join(bloc.text for bloc in message.content if bloc.type == "text")
     return {
         "reponse": texte.strip(),
-        "sources": [c["metadonnees"]["numero"] for c in chunks],
+        "sources": [
+            f"{c['metadonnees']['numero']} (en vigueur depuis le "
+            f"{c['metadonnees']['date_debut']})"
+            for c in chunks
+        ],
         "date_corpus": date_corpus,
         "avertissement": AVERTISSEMENT,
     }

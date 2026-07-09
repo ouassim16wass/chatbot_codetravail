@@ -131,7 +131,15 @@ export default async (req) => {
 
   if (store) await store.set("total", String(depense + cout));
 
-  const sources = [...new Set(extraits.map((e) => String(e.numero)))];
+  const sources = [
+    ...new Set(
+      extraits.map((e) =>
+        e.date
+          ? `${String(e.numero)} (en vigueur depuis le ${String(e.date).slice(0, 10)})`
+          : String(e.numero)
+      )
+    ),
+  ];
   return Response.json({
     verdict,
     reponse: texteDe(generation),

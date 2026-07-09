@@ -79,7 +79,7 @@ function rechercher(vecteurQuestion, question) {
   for (const { element } of scores) {
     if (vus.has(element.numero)) continue;
     vus.add(element.numero);
-    retenus.push({ numero: element.numero, texte: element.texte });
+    retenus.push({ numero: element.numero, date: element.date, texte: element.texte });
     if (retenus.length === 6) break;
   }
   return retenus;
