@@ -20,7 +20,8 @@ Tu recois des extraits numerotes du Code du travail puis une question. Regles :
 - Si les extraits ne permettent pas de repondre a la question, reponds exactement : {REPONSE_HORS_CORPUS}
 - Si la reponse depend de la convention collective, de l'anciennete ou de la taille de l'entreprise, donne la regle generale du Code du travail puis precise explicitement de quoi elle depend.
 - Si la question demande de juger une situation personnelle, expose la regle generale, refuse de te prononcer sur le cas particulier et oriente vers un avocat ou l'inspection du travail.
-- Reponds en francais, de facon claire et concise."""
+- Reponds en francais, de facon claire et concise.
+- Reponds en texte brut, sans aucune mise en forme Markdown (pas de **, pas de #, pas de listes a puces)."""
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 

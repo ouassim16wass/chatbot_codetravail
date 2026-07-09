@@ -1,5 +1,7 @@
+import re
+
 from src.moderateur import MESSAGES_BLOCAGE, moderer
-from src.rag import REPONSE_HORS_CORPUS, SEUIL_CONFIANCE, generate_answer
+from src.rag import SEUIL_CONFIANCE, generate_answer
 from src.segmentation import rechercher
 from src.vector_db import load_database
 
@@ -9,7 +11,7 @@ COMMANDES_SORTIE = {"quit", "exit", "q"}
 def afficher(resultat):
     print()
     print(resultat["reponse"])
-    if not resultat["reponse"].startswith(REPONSE_HORS_CORPUS):
+    if re.search(r"L\d{3,4}-\d+", resultat["reponse"]):
         print()
         print("Articles sources :")
         for source in resultat["sources"]:
