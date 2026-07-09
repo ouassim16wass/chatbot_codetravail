@@ -16,6 +16,7 @@ def main():
         elements.append({
             "id": identifiant,
             "numero": metadonnees["numero"],
+            "date": metadonnees["date_debut"],
             "texte": document,
             "vecteur": [round(float(v), 4) for v in vecteur],
         })
