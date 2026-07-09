@@ -9,6 +9,8 @@ AVERTISSEMENT = (
 
 REPONSE_HORS_CORPUS = "Je ne trouve pas cette information dans ma base."
 
+SEUIL_CONFIANCE = 0.5
+
 PROMPT_SYSTEME = f"""Tu es un assistant juridique specialise dans le Code du travail francais.
 
 Tu recois des extraits numerotes du Code du travail puis une question. Regles :
@@ -49,9 +51,10 @@ def generate_answer(question, chunks, date_corpus):
         "reponse": texte.strip(),
         "sources": [
             f"{c['metadonnees']['numero']} (en vigueur depuis le "
-            f"{c['metadonnees']['date_debut']})"
+            f"{c['metadonnees']['date_debut']}, pertinence {c['score']:.2f})"
             for c in chunks
         ],
+        "confiance": max((c["score"] for c in chunks), default=0.0),
         "date_corpus": date_corpus,
         "avertissement": AVERTISSEMENT,
     }

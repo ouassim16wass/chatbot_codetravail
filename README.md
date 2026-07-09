@@ -159,18 +159,27 @@ numéro d'article.
 
 ## Démonstration web (Netlify)
 
-Le dossier `webapp/` contient une version web de démonstration :
+Le dossier `webapp/` contient une version web de démonstration. Chaque
+question passe par les mêmes agents que la version en ligne de commande :
 
-- la recherche tourne dans le navigateur : le modèle d'embedding
-  (transformers.js, même modèle MiniLM multilingue que le projet) encode la
-  question, la similarité cosinus est calculée sur les 858 chunks exportés
-  dans `webapp/data/base.json` (régénérable avec `python -m src.export_webapp`),
-  avec la même recherche hybride par numéro d'article ;
-- seule la génération passe par une fonction serveur (`webapp/functions/ask.mjs`)
-  qui vérifie un code d'accès (`CODE_ACCES`), applique la modération, appelle
-  l'API Anthropic avec la clé stockée en variable d'environnement Netlify
-  (`ANTHROPIC_API_KEY`, jamais exposée au navigateur) et plafonne la dépense
-  totale de la démonstration à 5 euros (compteur persistant Netlify Blobs).
+1. la fonction serveur (`webapp/functions/ask.mjs`, action `preparer`) modère
+   la question (prompt injection, hors sujet) puis la restructure : parasites
+   supprimés, fautes corrigées, reformulation sans changement de sens,
+   découpage en sous-questions si nécessaire — la reformulation est affichée
+   à l'utilisateur ;
+2. la recherche tourne dans le navigateur : le modèle d'embedding
+  (transformers.js, même modèle MiniLM multilingue que le projet) encode
+  chaque sous-question, la similarité cosinus est calculée sur les 858 chunks
+  exportés dans `webapp/site/data/base.json` (régénérable avec
+  `python -m src.export_webapp`), avec la recherche hybride par numéro
+  d'article — les articles trouvés sont consultables dans l'interface
+  (panneau dépliable : numéro, date d'entrée en vigueur, score de pertinence,
+  texte), et un avertissement s'affiche si la meilleure pertinence passe sous
+  le seuil de confiance (0,5) ;
+3. la génération (action `repondre`) appelle l'API Anthropic avec la clé
+  stockée en variable d'environnement Netlify (`ANTHROPIC_API_KEY`, jamais
+  exposée au navigateur) et plafonne la dépense totale de la démonstration à
+  5 euros (compteur persistant Netlify Blobs).
 
 ### Tester la web app en local
 
@@ -180,6 +189,5 @@ npm install
 node serveur_local.mjs
 ```
 
-Puis ouvrir http://localhost:8888 — code d'accès local : `test-local`. Le
-serveur local rejoue exactement la fonction Netlify en lisant la clé API dans
-le `.env` du projet.
+Puis ouvrir http://localhost:8888. Le serveur local rejoue exactement la
+fonction Netlify en lisant la clé API dans le `.env` du projet.
