@@ -54,8 +54,8 @@ hors sujet, la reformulation des questions familières, le mode comparaison
 (la question est découpée en sous-questions), et la recherche par numéro
 d'article. Plus un score de confiance affiché avec chaque réponse.
 
-Une campagne de dix questions est documentée dans le README, avec une note
-de 7,5/10. Le système n'a jamais inventé : quand il ne sait pas, il refuse.
+Une campagne de dix questions est documentée dans le README. Le système n'a
+jamais inventé : quand il ne sait pas, il refuse.
 
 ## Avec plus de temps
 
