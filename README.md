@@ -21,8 +21,26 @@ cp .env.example .env   # puis renseigner la clé API
 ## Utilisation
 
 ```bash
-python index.py   # construit la base vectorielle depuis le corpus
+python index.py   # construit la base vectorielle depuis le corpus (une seule fois)
 python ask.py     # lance la boucle de questions-réponses
+```
+
+L'indexation ne se fait qu'une fois : `ask.py` recharge la base persistée
+sans jamais réindexer. Dans la boucle, tapez votre question puis Entrée ;
+`quit` pour sortir. Chaque réponse affiche les articles sources (issus des
+métadonnées du retrieval, pas du LLM), la date du corpus et l'avertissement
+juridique.
+
+## Récupération du corpus
+
+Le corpus prêt à l'emploi (`data/corpus.json`, 812 articles, 8 thèmes) est
+fourni dans le dépôt. Pour le reconstruire depuis la source officielle
+(option B du sujet — base LEGI de la DILA) :
+
+```bash
+python src/download_corpus.py   # lit l'archive LEGI (~1,1 Go) en flux, n'écrit que le Code du travail (366 Mo de XML)
+python src/extract_corpus.py    # filtre les versions en vigueur des 8 thèmes, nettoie, produit data/corpus.json
+python -m src.eval_retrieval    # valide le retrieval sur le jeu de questions test
 ```
 
 ## Choix du LLM
