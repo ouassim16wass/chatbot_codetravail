@@ -122,6 +122,11 @@ async function poser() {
       attente.textContent = donnees.erreur || "Erreur du serveur.";
       if (reponse.status === 401) {
         sessionStorage.removeItem("code_acces");
+        codeAcces = "";
+        champCode.value = "";
+        erreurCode.textContent = "Code d'acces invalide, reessayez.";
+        masquer(app);
+        afficher(porte);
       }
       return;
     }
