@@ -1,36 +1,79 @@
 # Assistant Code du travail (RAG)
 
-Chatbot de questions-reponses sur le droit du travail francais, avec citation
-systematique des articles utilises.
+Chatbot de questions-réponses sur le droit du travail français, avec citation
+systématique des articles utilisés.
 
 Projet final M2 MD5 — Data & IA.
 
 ## Objectif
 
-Construire un systeme RAG complet, sans framework tout-en-un : ingestion des
-textes de loi, decoupage en chunks, base vectorielle persistee, generation de
-reponses avec citation des numeros d'articles et refus de repondre hors corpus.
+Construire un système RAG complet, sans framework tout-en-un : ingestion des
+textes de loi, découpage en chunks, base vectorielle persistée, génération de
+réponses avec citation des numéros d'articles et refus de répondre hors corpus.
 
 ## Installation
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # puis renseigner la cle API
+cp .env.example .env   # puis renseigner la clé API
 ```
 
 ## Utilisation
 
 ```bash
 python index.py   # construit la base vectorielle depuis le corpus
-python ask.py     # lance la boucle de questions-reponses
+python ask.py     # lance la boucle de questions-réponses
 ```
 
-## Questions de reflexion
+## Questions de réflexion
 
-A completer avant l'implementation du pipeline :
+### 1. Granularité du chunking
 
-1. Granularite du chunking
-2. Tracabilite des numeros d'articles
-3. Fraicheur du corpus
-4. Reponses conditionnelles
-5. Frontiere du conseil juridique
+Indexer par section produit des chunks trop longs : l'embedding est dilué et la
+citation d'un article précis devient difficile. Indexer chaque article seul est
+précis, mais un article isolé perd le contexte de sa section (renvois, sigles).
+Nous retenons une approche hybride : un chunk par article, dont le texte
+embeddé est préfixé du thème de la section et du numéro d'article
+(« Durée du travail — Article L3121-27 : ... »). Le chunk reste court et
+précis tout en portant son contexte. Les rares articles très longs sont
+découpés en plusieurs chunks qui conservent chacun le numéro d'article.
+
+### 2. Traçabilité des numéros d'articles
+
+Le numéro d'article est stocké aux deux endroits : dans le texte embeddé (une
+question comme « que dit l'article L3121-1 ? » retrouve ainsi la bonne fiche)
+et dans les métadonnées (numéro, thème, source). Trois garde-fous contre les
+citations inventées : le contexte fourni au LLM est numéroté avec les vrais
+numéros d'articles ; le prompt interdit de citer un numéro absent du contexte ;
+et surtout la liste des articles sources affichée sous chaque réponse est
+générée par le code à partir des métadonnées du retrieval, pas par le LLM.
+La garantie est donc technique et non confiée au modèle.
+
+### 3. Fraîcheur du corpus
+
+La date d'extraction du corpus est enregistrée dans les métadonnées de la base
+vectorielle lors de l'indexation, à côté du nom du modèle d'embedding. Le code
+ajoute à chaque réponse la mention « Corpus à jour au [date] — le droit du
+travail évolue, vérifiez sur legifrance.gouv.fr ». Cette ligne étant ajoutée
+par le programme, elle ne peut pas être omise.
+
+### 4. Réponses conditionnelles
+
+Beaucoup de réponses dépendent de la convention collective, de l'ancienneté ou
+de la taille de l'entreprise. Le prompt demande au LLM de donner la règle
+générale du Code du travail (le socle légal) en nommant explicitement les
+paramètres dont la réponse dépend, et de renvoyer vers la convention collective
+applicable. Une question de clarification interactive est envisageable comme
+amélioration (jalon 6, avec historique de conversation), mais la réponse
+générale assortie de réserves est plus robuste pour la v1.
+
+### 5. Frontière du conseil juridique
+
+Une question factuelle (« combien de jours de congés par an ? ») trouve sa
+réponse directement dans le Code : le système répond en citant les articles.
+Une question d'interprétation (« mon licenciement est-il abusif ? ») demande de
+qualifier une situation personnelle : le système expose ce que dit la loi en
+général, refuse explicitement de juger le cas particulier et oriente vers un
+avocat ou l'inspection du travail. Dans tous les cas, l'avertissement
+juridique obligatoire est concaténé à la réponse par le code qui l'assemble,
+et non par le prompt : il est donc présent dans 100 % des réponses.
