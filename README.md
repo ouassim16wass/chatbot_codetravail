@@ -21,9 +21,38 @@ cp .env.example .env   # puis renseigner la clé API
 ## Utilisation
 
 ```bash
-python index.py   # construit la base vectorielle depuis le corpus
+python index.py   # construit la base vectorielle depuis le corpus (une seule fois)
 python ask.py     # lance la boucle de questions-réponses
 ```
+
+L'indexation ne se fait qu'une fois : `ask.py` recharge la base persistée
+sans jamais réindexer. Dans la boucle, tapez votre question puis Entrée ;
+`quit` pour sortir. Chaque réponse affiche les articles sources (issus des
+métadonnées du retrieval, pas du LLM), la date du corpus et l'avertissement
+juridique.
+
+## Récupération du corpus
+
+Le corpus prêt à l'emploi (`data/corpus.json`, 812 articles, 8 thèmes) est
+fourni dans le dépôt. Pour le reconstruire depuis la source officielle
+(option B du sujet — base LEGI de la DILA) :
+
+```bash
+python src/download_corpus.py   # lit l'archive LEGI (~1,1 Go) en flux, n'écrit que le Code du travail (366 Mo de XML)
+python src/extract_corpus.py    # filtre les versions en vigueur des 8 thèmes, nettoie, produit data/corpus.json
+python -m src.eval_retrieval    # valide le retrieval sur le jeu de questions test
+```
+
+## Choix du LLM
+
+Le sujet propose l'API Groq ; nous utilisons l'API Anthropic (modèle
+claude-haiku-4-5), qui repose sur le même principe : une bibliothèque
+« brique élémentaire » qui envoie la question et le contexte à un LLM hébergé
+et récupère la réponse, à température basse (0.2) pour limiter les
+inventions. Le pipeline étant écrit brique par brique, changer de fournisseur
+ne modifie qu'une seule fonction (`generate_answer` dans `src/rag.py`) : la
+recherche, le prompt et l'assemblage de la réponse restent identiques. La clé
+API est lue depuis `.env`, jamais versionnée.
 
 ## Questions de réflexion
 
