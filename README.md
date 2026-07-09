@@ -156,3 +156,18 @@ lieu d'une réponse) et la question comparative dépend de la variance du
 retrieval (question 5). La campagne a directement conduit à une amélioration :
 l'échec initial de la question 3 a motivé l'ajout de la recherche hybride par
 numéro d'article.
+
+## Démonstration web (Netlify)
+
+Le dossier `webapp/` contient une version web de démonstration :
+
+- la recherche tourne dans le navigateur : le modèle d'embedding
+  (transformers.js, même modèle MiniLM multilingue que le projet) encode la
+  question, la similarité cosinus est calculée sur les 858 chunks exportés
+  dans `webapp/data/base.json` (régénérable avec `python -m src.export_webapp`),
+  avec la même recherche hybride par numéro d'article ;
+- seule la génération passe par une fonction serveur (`webapp/functions/ask.mjs`)
+  qui vérifie un code d'accès (`CODE_ACCES`), applique la modération, appelle
+  l'API Anthropic avec la clé stockée en variable d'environnement Netlify
+  (`ANTHROPIC_API_KEY`, jamais exposée au navigateur) et plafonne la dépense
+  totale de la démonstration à 5 euros (compteur persistant Netlify Blobs).
