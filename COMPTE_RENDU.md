@@ -38,6 +38,18 @@ fonction. L'indexation est incrémentale (empreinte de texte par chunk) et le
 corpus se synchronise avec les lois récentes par les archives incrémentales
 quotidiennes de la DILA, en une commande.
 
+Nombre d'extraits envoyés au LLM : les articles sont courts (413 caractères
+en médiane, soit environ 150 tokens par extrait), j'envoie donc k = 5
+articles distincts pour une question simple — l'article visé plus ses
+voisins de section, sans noyer le modèle. Pour une question décomposée en
+sous-questions, 4 extraits par sous-question puis fusion avec un plafond à
+6, afin que chaque notion soit couverte. Trop peu (2-3), la bonne réponse
+manque dès que le premier résultat est à côté ; trop (10 et plus), le
+contexte se dilue, le modèle cite des articles périphériques et le coût
+grimpe (à k = 6, environ 2 500 tokens d'entrée, soit un demi-centime par
+question). Le jeu d'évaluation du jalon 3 valide ce réglage : les six
+questions test trouvent leur article dans le top-5.
+
 ## Améliorations réalisées (jalon 6)
 
 Quatre améliorations de la liste du sujet : un agent modérateur qui bloque
