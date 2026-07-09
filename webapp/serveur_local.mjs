@@ -11,7 +11,7 @@ for (const ligne of env.split(/\r?\n/)) {
   const m = ligne.match(/^([A-Z_]+)=(.*)$/);
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
 }
-if (!process.env.CODE_ACCES) process.env.CODE_ACCES = "test-local";
+
 
 const { default: ask } = await import("./functions/ask.mjs");
 
@@ -57,6 +57,6 @@ createServer(async (req, res) => {
   }
 }).listen(8888, () => {
   console.log(
-    `Serveur local : http://localhost:8888 (code d'acces : ${process.env.CODE_ACCES})`
+    `Serveur local : http://localhost:8888`
   );
 });
