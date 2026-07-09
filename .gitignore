@@ -20,11 +20,3 @@ data/raw/
 # Divers
 *.pdf
 .DS_Store
-
-# Web app
-node_modules/
-
-# Demo web locale (non versionnee)
-webapp/
-netlify.toml
-src/export_webapp.py
