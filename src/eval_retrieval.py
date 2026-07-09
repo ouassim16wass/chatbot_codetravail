@@ -1,0 +1,37 @@
+from src.vector_db import load_database, search
+
+TOP_K = 5
+
+JEU_DE_TEST = [
+    ("Quelle est la durée légale de travail par semaine ?",
+     {"L3121-27"}),
+    ("Combien d'heures maximum peut-on travailler par semaine ?",
+     {"L3121-20"}),
+    ("Combien de jours de congés payés gagne-t-on par mois de travail ?",
+     {"L3141-3"}),
+    ("Comment fonctionne la rupture conventionnelle ?",
+     {"L1237-11", "L1237-12", "L1237-13"}),
+    ("Qu'est-ce que le harcèlement moral au travail ?",
+     {"L1152-1"}),
+    ("Quelle est la durée maximale de la période d'essai d'un CDI ?",
+     {"L1221-19"}),
+]
+
+
+def main():
+    collection, modele = load_database()
+    reussites = 0
+    for question, acceptes in JEU_DE_TEST:
+        resultats = search(collection, modele, question, k=TOP_K)
+        numeros = [r["metadonnees"]["numero"] for r in resultats]
+        trouve = bool(acceptes & set(numeros))
+        reussites += trouve
+        print(f"{'OK  ' if trouve else 'RATE'}  {question}")
+        print(f"      attendu : {' ou '.join(sorted(acceptes))} | "
+              f"top-{TOP_K} : {', '.join(numeros)}")
+    print(f"\nBilan : {reussites}/{len(JEU_DE_TEST)} questions trouvent "
+          f"un article attendu dans le top-{TOP_K}")
+
+
+if __name__ == "__main__":
+    main()
