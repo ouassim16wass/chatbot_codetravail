@@ -6,9 +6,12 @@ from src.config import ANTHROPIC_API_KEY, LLM_MODEL
 from src.vector_db import search
 
 PROMPT_SEGMENTATION = """Tu prepares des questions pour un moteur de recherche documentaire sur le Code du travail francais.
-On te donne la question d'un utilisateur.
-- Si elle porte sur un seul sujet, renvoie-la telle quelle (reformulee clairement si elle est familiere).
-- Si elle combine plusieurs sujets ou compare plusieurs notions, decoupe-la en 2 ou 3 sous-questions simples et autonomes.
+On te donne la question brute d'un utilisateur. Nettoie-la et restructure-la :
+- supprime les formules de politesse et les mots parasites (bonjour, svp, euh, voila, en fait...)
+- corrige les fautes et retablis les accents
+- reformule clairement, SANS changer le sens de la question et SANS ajouter d'informations
+- si la question porte sur un seul sujet, renvoie une seule question reformulee
+- si elle combine plusieurs sujets ou compare plusieurs notions, decoupe-la en 2 ou 3 sous-questions simples et autonomes
 Renvoie uniquement la ou les questions, une par ligne, sans numerotation ni commentaire."""
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)

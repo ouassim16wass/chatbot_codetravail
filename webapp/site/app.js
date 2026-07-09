@@ -1,27 +1,15 @@
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.1";
 
-const porte = document.getElementById("porte");
-const app = document.getElementById("app");
-const champCode = document.getElementById("champ-code");
-const boutonCode = document.getElementById("bouton-code");
-const erreurCode = document.getElementById("erreur-code");
 const etat = document.getElementById("etat");
 const conversation = document.getElementById("conversation");
 const champQuestion = document.getElementById("champ-question");
 const boutonQuestion = document.getElementById("bouton-question");
 
-let codeAcces = sessionStorage.getItem("code_acces") || "";
+const SEUIL_CONFIANCE = 0.5;
+
 let base = null;
 let normes = null;
 let encoder = null;
-
-function afficher(element) {
-  element.classList.remove("cache");
-}
-
-function masquer(element) {
-  element.classList.add("cache");
-}
 
 function ajouterMessage(texte, classe) {
   const bloc = document.createElement("div");
@@ -30,6 +18,17 @@ function ajouterMessage(texte, classe) {
   conversation.appendChild(bloc);
   bloc.scrollIntoView({ behavior: "smooth", block: "end" });
   return bloc;
+}
+
+function rendreMarkdown(texte) {
+  const echappe = texte
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return echappe
+    .replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/^\s*[-*] /gm, "• ");
 }
 
 function norme(vecteur) {
@@ -44,18 +43,6 @@ function similarite(a, normeA, b, normeB) {
   return produit / (normeA * normeB || 1);
 }
 
-function rendreMarkdown(texte) {
-  const echappe = texte
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return echappe
-    .replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>")
-    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/^\s*[-*] /gm, "• ");
-}
-
-
 function numerosCites(question) {
   const numeros = [];
   for (const m of question.matchAll(/[Ll]\.?\s*(\d{3,4}-\d+(?:-\d+)*)/g)) {
@@ -64,30 +51,73 @@ function numerosCites(question) {
   return numeros;
 }
 
-function rechercher(vecteurQuestion, question) {
-  const normeQ = norme(vecteurQuestion);
-  const cites = numerosCites(question);
-  const scores = base.elements.map((element, i) => ({
-    element,
-    score: cites.includes(element.numero)
-      ? 1.0
-      : similarite(vecteurQuestion, normeQ, element.vecteur, normes[i]),
-  }));
-  scores.sort((a, b) => b.score - a.score);
-  const retenus = [];
-  const vus = new Set();
-  for (const { element } of scores) {
-    if (vus.has(element.numero)) continue;
-    vus.add(element.numero);
-    retenus.push({ numero: element.numero, date: element.date, texte: element.texte });
-    if (retenus.length === 6) break;
+async function chercherExtraits(question, sousQuestions) {
+  const parNumero = new Map();
+  for (const numero of numerosCites(question)) {
+    const element = base.elements.find((e) => e.numero === numero);
+    if (element) parNumero.set(numero, { element, score: 1.0 });
   }
-  return retenus;
+  for (const sousQuestion of sousQuestions) {
+    const sortie = await encoder(sousQuestion, { pooling: "mean" });
+    const vecteur = Array.from(sortie.data);
+    const normeQ = norme(vecteur);
+    const scores = base.elements.map((element, i) => ({
+      element,
+      score: similarite(vecteur, normeQ, element.vecteur, normes[i]),
+    }));
+    scores.sort((a, b) => b.score - a.score);
+    for (const candidat of scores.slice(0, 4)) {
+      const numero = candidat.element.numero;
+      const existant = parNumero.get(numero);
+      if (!existant || candidat.score > existant.score) {
+        parNumero.set(numero, candidat);
+      }
+    }
+  }
+  return [...parNumero.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map(({ element, score }) => ({
+      numero: element.numero,
+      date: element.date,
+      texte: element.texte,
+      score,
+    }));
+}
+
+function panneauExtraits(extraits) {
+  const details = document.createElement("details");
+  details.className = "extraits";
+  const resume = document.createElement("summary");
+  resume.textContent = `Voir les ${extraits.length} articles trouves par la recherche`;
+  details.appendChild(resume);
+  for (const extrait of extraits) {
+    const bloc = document.createElement("div");
+    bloc.className = "extrait";
+    const entete = document.createElement("strong");
+    entete.textContent =
+      `${extrait.numero} — en vigueur depuis le ${extrait.date} — ` +
+      `pertinence ${(extrait.score * 100).toFixed(0)} %`;
+    const texte = document.createElement("p");
+    texte.textContent = extrait.texte;
+    bloc.appendChild(entete);
+    bloc.appendChild(texte);
+    details.appendChild(bloc);
+  }
+  return details;
+}
+
+async function appeler(corps) {
+  const reponse = await fetch("/api/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corps),
+  });
+  const donnees = await reponse.json();
+  return { ok: reponse.ok, donnees };
 }
 
 async function initialiser() {
-  masquer(porte);
-  afficher(app);
   try {
     etat.textContent = "Chargement de la base documentaire...";
     const reponse = await fetch("data/base.json");
@@ -115,50 +145,61 @@ async function poser() {
   champQuestion.disabled = true;
   boutonQuestion.disabled = true;
   ajouterMessage(question, "question");
-  const attente = ajouterMessage("Recherche des articles pertinents...", "reponse");
+  const attente = ajouterMessage("Restructuration de la question...", "reponse");
 
   try {
-    const sortie = await encoder(question, { pooling: "mean" });
-    const extraits = rechercher(Array.from(sortie.data), question);
+    const preparation = await appeler({ action: "preparer", question });
+    if (!preparation.ok) {
+      attente.className = "message blocage";
+      attente.textContent = preparation.donnees.erreur || "Erreur du serveur.";
+      return;
+    }
+    if (preparation.donnees.verdict !== "legitime") {
+      attente.className = "message blocage";
+      attente.textContent = preparation.donnees.reponse;
+      return;
+    }
+
+    const sousQuestions = preparation.donnees.sous_questions;
+    if (sousQuestions.length > 1 || sousQuestions[0] !== question) {
+      const reformulation = document.createElement("div");
+      reformulation.className = "reformulation";
+      reformulation.textContent =
+        "Recherche effectuee avec : " + sousQuestions.join(" | ");
+      attente.before(reformulation);
+    }
+
+    attente.textContent = "Recherche des articles pertinents...";
+    const extraits = await chercherExtraits(question, sousQuestions);
+    attente.before(panneauExtraits(extraits));
+
     attente.textContent = "Redaction de la reponse...";
-
-    const reponse = await fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: codeAcces, question, extraits }),
-    });
-    const donnees = await reponse.json();
-
-    if (!reponse.ok) {
+    const generation = await appeler({ action: "repondre", question, extraits });
+    if (!generation.ok) {
       attente.className = "message blocage";
-      attente.textContent = donnees.erreur || "Erreur du serveur.";
-      if (reponse.status === 401) {
-        sessionStorage.removeItem("code_acces");
-        codeAcces = "";
-        champCode.value = "";
-        erreurCode.textContent = "Code d'acces invalide, reessayez.";
-        masquer(app);
-        afficher(porte);
-      }
+      attente.textContent = generation.donnees.erreur || "Erreur du serveur.";
       return;
     }
 
-    if (donnees.verdict !== "legitime") {
-      attente.className = "message blocage";
-      attente.textContent = donnees.reponse;
-      return;
-    }
-
-    attente.innerHTML = rendreMarkdown(donnees.reponse);
+    attente.innerHTML = rendreMarkdown(generation.donnees.reponse);
     const sources = document.createElement("div");
     sources.className = "sources";
-    sources.textContent = "Articles sources : " + donnees.sources.join(", ");
+    sources.textContent =
+      "Articles sources : " + generation.donnees.sources.join(", ");
     attente.appendChild(sources);
+    const confiance = Math.max(...extraits.map((e) => e.score), 0);
+    if (confiance < SEUIL_CONFIANCE) {
+      const alerte = document.createElement("div");
+      alerte.className = "alerte";
+      alerte.textContent =
+        "Attention : correspondance faible avec le corpus, la reponse peut etre incomplete.";
+      attente.appendChild(alerte);
+    }
     const mentions = document.createElement("div");
     mentions.className = "mentions";
     mentions.textContent =
       `Corpus a jour au ${base.date_corpus} - le droit du travail evolue, ` +
-      `verifiez sur legifrance.gouv.fr. ${donnees.avertissement}`;
+      `verifiez sur legifrance.gouv.fr. ${generation.donnees.avertissement}`;
     attente.appendChild(mentions);
   } catch (e) {
     attente.className = "message blocage";
@@ -170,24 +211,9 @@ async function poser() {
   }
 }
 
-boutonCode.addEventListener("click", () => {
-  const code = champCode.value.trim();
-  if (!code) {
-    erreurCode.textContent = "Entrez un code d'acces.";
-    return;
-  }
-  codeAcces = code;
-  sessionStorage.setItem("code_acces", code);
-  initialiser();
-});
-
-champCode.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") boutonCode.click();
-});
-
 boutonQuestion.addEventListener("click", poser);
 champQuestion.addEventListener("keydown", (e) => {
   if (e.key === "Enter") poser();
 });
 
-if (codeAcces) initialiser();
+initialiser();

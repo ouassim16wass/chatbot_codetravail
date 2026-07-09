@@ -1,5 +1,5 @@
 from src.moderateur import MESSAGES_BLOCAGE, moderer
-from src.rag import REPONSE_HORS_CORPUS, generate_answer
+from src.rag import REPONSE_HORS_CORPUS, SEUIL_CONFIANCE, generate_answer
 from src.segmentation import rechercher
 from src.vector_db import load_database
 
@@ -11,7 +11,14 @@ def afficher(resultat):
     print(resultat["reponse"])
     if not resultat["reponse"].startswith(REPONSE_HORS_CORPUS):
         print()
-        print("Articles sources : " + ", ".join(resultat["sources"]))
+        print("Articles sources :")
+        for source in resultat["sources"]:
+            print(f"  - {source}")
+        if resultat["confiance"] < SEUIL_CONFIANCE:
+            print(
+                "Attention : correspondance faible avec le corpus, "
+                "la reponse peut etre incomplete."
+            )
     print()
     print(
         f"Corpus a jour au {resultat['date_corpus']} - le droit du travail "
@@ -40,8 +47,8 @@ def main():
             print("\n" + MESSAGES_BLOCAGE[verdict])
             continue
         chunks, sous_questions = rechercher(collection, modele, question)
-        if len(sous_questions) > 1:
-            print("\nQuestion decomposee pour la recherche :")
+        if sous_questions != [question]:
+            print("\nRecherche effectuee avec :")
             for sous_question in sous_questions:
                 print(f"  - {sous_question}")
         resultat = generate_answer(question, chunks, date_corpus)
