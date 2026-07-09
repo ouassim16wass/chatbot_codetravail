@@ -25,6 +25,17 @@ python index.py   # construit la base vectorielle depuis le corpus
 python ask.py     # lance la boucle de questions-réponses
 ```
 
+## Choix du LLM
+
+Le sujet propose l'API Groq ; nous utilisons l'API Anthropic (modèle
+claude-haiku-4-5), qui repose sur le même principe : une bibliothèque
+« brique élémentaire » qui envoie la question et le contexte à un LLM hébergé
+et récupère la réponse, à température basse (0.2) pour limiter les
+inventions. Le pipeline étant écrit brique par brique, changer de fournisseur
+ne modifie qu'une seule fonction (`generate_answer` dans `src/rag.py`) : la
+recherche, le prompt et l'assemblage de la réponse restent identiques. La clé
+API est lue depuis `.env`, jamais versionnée.
+
 ## Questions de réflexion
 
 ### 1. Granularité du chunking
