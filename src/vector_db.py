@@ -75,10 +75,13 @@ def load_database():
     return collection, SentenceTransformer(nom_modele)
 
 
-def search(collection, modele, question, k=5):
+def search(collection, modele, question, k=5, contient=None):
     vecteur = modele.encode([question])
+    filtre = {"$contains": contient} if contient else None
     resultats = collection.query(
-        query_embeddings=vecteur.tolist(), n_results=k * 3
+        query_embeddings=vecteur.tolist(),
+        n_results=k * 3,
+        where_document=filtre,
     )
     articles = []
     numeros_vus = set()
