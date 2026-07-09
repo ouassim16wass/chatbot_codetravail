@@ -1,5 +1,7 @@
+from src.moderateur import MESSAGES_BLOCAGE, moderer
 from src.rag import REPONSE_HORS_CORPUS, generate_answer
-from src.vector_db import load_database, search
+from src.segmentation import rechercher
+from src.vector_db import load_database
 
 COMMANDES_SORTIE = {"quit", "exit", "q"}
 
@@ -33,7 +35,15 @@ def main():
             continue
         if question.lower() in COMMANDES_SORTIE:
             break
-        chunks = search(collection, modele, question, k=5)
+        verdict = moderer(question)
+        if verdict != "legitime":
+            print("\n" + MESSAGES_BLOCAGE[verdict])
+            continue
+        chunks, sous_questions = rechercher(collection, modele, question)
+        if len(sous_questions) > 1:
+            print("\nQuestion decomposee pour la recherche :")
+            for sous_question in sous_questions:
+                print(f"  - {sous_question}")
         resultat = generate_answer(question, chunks, date_corpus)
         afficher(resultat)
     print("Au revoir.")
