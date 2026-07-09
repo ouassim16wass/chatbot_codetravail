@@ -1,3 +1,4 @@
 [build]
-  publish = "webapp"
-  functions = "webapp/functions"
+  base = "webapp"
+  publish = "site"
+  functions = "functions"

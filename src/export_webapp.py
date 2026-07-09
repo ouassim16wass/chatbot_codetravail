@@ -3,7 +3,7 @@ import json
 from src.config import BASE_DIR
 from src.vector_db import load_database
 
-SORTIE = BASE_DIR / "webapp" / "data" / "base.json"
+SORTIE = BASE_DIR / "webapp" / "site" / "data" / "base.json"
 
 
 def main():
