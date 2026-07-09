@@ -215,12 +215,6 @@ async function poser() {
         "Attention : correspondance faible avec le corpus, la reponse peut etre incomplete.";
       attente.appendChild(alerte);
     }
-    const mentions = document.createElement("div");
-    mentions.className = "mentions";
-    mentions.textContent =
-      `Corpus a jour au ${base.date_corpus} - le droit du travail evolue, ` +
-      `verifiez sur legifrance.gouv.fr. ${generation.donnees.avertissement}`;
-    attente.appendChild(mentions);
   } catch (e) {
     attente.className = "message blocage";
     attente.textContent = "Erreur : " + e.message;
