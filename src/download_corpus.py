@@ -1,17 +1,17 @@
+import re
 import tarfile
 import urllib.request
 from pathlib import Path
 
-ARCHIVE_URL = (
-    "https://echanges.dila.gouv.fr/OPENDATA/LEGI/"
-    "Freemium_legi_global_20250713-140000.tar.gz"
-)
+SERVEUR = "https://echanges.dila.gouv.fr/OPENDATA/LEGI/"
+ARCHIVE_URL = SERVEUR + "Freemium_legi_global_20250713-140000.tar.gz"
 DATE_CORPUS = "2025-07-13"
 
 CODE_TRAVAIL_ID = "LEGITEXT000006072050"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_DIR = BASE_DIR / "data" / "raw"
+ETAT = RAW_DIR / "derniere_synchro.txt"
 
 
 def main():
@@ -30,6 +30,7 @@ def main():
                 if CODE_TRAVAIL_ID in membre.name and membre.isfile():
                     archive.extract(membre, path=RAW_DIR)
                     extraits += 1
+    ETAT.write_text(re.search(r"(\d{8}-\d{6})", ARCHIVE_URL).group(1))
     print(f"Termine : {extraits} fichiers du Code du travail dans {RAW_DIR}")
 
 

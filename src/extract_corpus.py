@@ -4,7 +4,7 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from download_corpus import DATE_CORPUS
+from src.download_corpus import DATE_CORPUS, ETAT
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ARTICLES_DIR = (
@@ -13,6 +13,13 @@ ARTICLES_DIR = (
     / "LEGITEXT000006072050" / "article"
 )
 SORTIE = BASE_DIR / "data" / "corpus.json"
+
+
+def date_du_corpus():
+    if ETAT.exists():
+        h = ETAT.read_text().strip()
+        return f"{h[0:4]}-{h[4:6]}-{h[6:8]}"
+    return DATE_CORPUS
 
 THEMES = [
     ("Rupture conventionnelle", (1237, 11), (1237, 19)),
@@ -97,7 +104,7 @@ def main():
 
     corpus = {
         "source": "Code du travail - base LEGI (DILA / data.gouv.fr)",
-        "date_corpus": DATE_CORPUS,
+        "date_corpus": date_du_corpus(),
         "nb_documents": len(docs),
         "documents": docs,
     }
