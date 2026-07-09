@@ -1,3 +1,5 @@
+import re
+
 import anthropic
 
 from src.config import ANTHROPIC_API_KEY, LLM_MODEL
@@ -25,9 +27,32 @@ def decomposer(question):
     return lignes[:3] if lignes else [question]
 
 
+def numeros_cites(question):
+    return [
+        "L" + m.group(1)
+        for m in re.finditer(r"[Ll]\.?\s*(\d{3,4}-\d+(?:-\d+)*)", question)
+    ]
+
+
+def chunks_cites(collection, numeros):
+    if not numeros:
+        return []
+    resultat = collection.get(
+        where={"numero": {"$in": numeros}}, include=["documents", "metadatas"]
+    )
+    return [
+        {"texte": document, "metadonnees": metadonnees, "score": 1.0}
+        for document, metadonnees in zip(
+            resultat["documents"], resultat["metadatas"]
+        )
+    ]
+
+
 def rechercher(collection, modele, question, k=5):
     sous_questions = decomposer(question)
     par_numero = {}
+    for article in chunks_cites(collection, numeros_cites(question)):
+        par_numero[article["metadonnees"]["numero"]] = article
     for sous_question in sous_questions:
         for article in search(collection, modele, sous_question, k=4):
             numero = article["metadonnees"]["numero"]
