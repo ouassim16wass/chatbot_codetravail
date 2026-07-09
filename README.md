@@ -171,3 +171,15 @@ Le dossier `webapp/` contient une version web de démonstration :
   l'API Anthropic avec la clé stockée en variable d'environnement Netlify
   (`ANTHROPIC_API_KEY`, jamais exposée au navigateur) et plafonne la dépense
   totale de la démonstration à 5 euros (compteur persistant Netlify Blobs).
+
+### Tester la web app en local
+
+```bash
+cd webapp
+npm install
+node serveur_local.mjs
+```
+
+Puis ouvrir http://localhost:8888 — code d'accès local : `test-local`. Le
+serveur local rejoue exactement la fonction Netlify en lisant la clé API dans
+le `.env` du projet.
