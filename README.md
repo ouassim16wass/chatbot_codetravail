@@ -38,10 +38,28 @@ fourni dans le dépôt. Pour le reconstruire depuis la source officielle
 (option B du sujet — base LEGI de la DILA) :
 
 ```bash
-python src/download_corpus.py   # lit l'archive LEGI (~1,1 Go) en flux, n'écrit que le Code du travail (366 Mo de XML)
-python src/extract_corpus.py    # filtre les versions en vigueur des 8 thèmes, nettoie, produit data/corpus.json
+python -m src.download_corpus   # lit l'archive LEGI (~1,1 Go) en flux, n'écrit que le Code du travail (366 Mo de XML)
+python -m src.extract_corpus    # filtre les versions en vigueur des 8 thèmes, nettoie, produit data/corpus.json
 python -m src.eval_retrieval    # valide le retrieval sur le jeu de questions test
 ```
+
+## Mise à jour du corpus (lois récentes)
+
+La DILA publie chaque jour une archive incrémentale contenant les textes
+modifiés. Une seule commande synchronise le corpus avec le droit en vigueur :
+
+```bash
+python -m src.update_corpus
+```
+
+Elle télécharge les archives publiées depuis la dernière synchronisation
+(mémorisée dans `data/raw/derniere_synchro.txt`), met à jour les XML du Code
+du travail, régénère `data/corpus.json`, puis réindexe de façon incrémentale :
+seuls les articles nouveaux ou modifiés sont réencodés (comparaison par
+empreinte du texte), les articles abrogés sont retirés de la base. La date du
+corpus affichée dans chaque réponse est mise à jour automatiquement.
+`index.py` utilise la même indexation incrémentale : le relancer sur un corpus
+inchangé n'encode rien.
 
 ## Choix du LLM
 
