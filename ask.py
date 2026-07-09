@@ -1,3 +1,4 @@
+from src.moderateur import MESSAGES_BLOCAGE, moderer
 from src.rag import REPONSE_HORS_CORPUS, generate_answer
 from src.vector_db import load_database, search
 
@@ -33,6 +34,10 @@ def main():
             continue
         if question.lower() in COMMANDES_SORTIE:
             break
+        verdict = moderer(question)
+        if verdict != "legitime":
+            print("\n" + MESSAGES_BLOCAGE[verdict])
+            continue
         chunks = search(collection, modele, question, k=5)
         resultat = generate_answer(question, chunks, date_corpus)
         afficher(resultat)
