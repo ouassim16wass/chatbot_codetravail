@@ -29,6 +29,8 @@ On te donne la question brute d'un utilisateur. Nettoie-la et restructure-la :
 - supprime les formules de politesse et les mots parasites (bonjour, svp, euh, voila, en fait...)
 - corrige les fautes et retablis les accents
 - reformule clairement, SANS changer le sens de la question et SANS ajouter d'informations
+- traduis les mots courants en vocabulaire du Code du travail (exemples : se faire virer -> licenciement ; quitter son emploi -> demission)
+- si la question porte sur la rupture ou le preavis d'un CDI sans preciser le cas, decoupe en deux sous-questions : le preavis de licenciement et le preavis de demission, sans mentionner CDI ni contrat dans les sous-questions
 - si la question porte sur un seul sujet, renvoie une seule question reformulee
 - si elle combine plusieurs sujets ou compare plusieurs notions, decoupe-la en 2 ou 3 sous-questions simples et autonomes
 Renvoie uniquement la ou les questions, une par ligne, sans numerotation ni commentaire.`;

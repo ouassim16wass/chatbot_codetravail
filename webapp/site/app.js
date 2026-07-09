@@ -51,6 +51,17 @@ function numerosCites(question) {
   return numeros;
 }
 
+const MOTS_VIDES = new Set([
+  "quelle", "quelles", "quels", "comment", "combien", "pendant", "apres",
+  "avant", "entre", "cette", "votre", "notre", "salarie", "salariee",
+  "employeur", "travail", "contrat", "france", "conditions", "regles",
+]);
+
+function motsCles(texte) {
+  const mots = texte.toLowerCase().match(/[a-zà-ÿ]{6,}/g) || [];
+  return mots.filter((m) => !MOTS_VIDES.has(m)).slice(0, 4);
+}
+
 async function chercherExtraits(question, sousQuestions) {
   const parNumero = new Map();
   for (const numero of numerosCites(question)) {
@@ -66,7 +77,15 @@ async function chercherExtraits(question, sousQuestions) {
       score: similarite(vecteur, normeQ, element.vecteur, normes[i]),
     }));
     scores.sort((a, b) => b.score - a.score);
-    for (const candidat of scores.slice(0, 4)) {
+    const candidats = scores.slice(0, 4);
+    for (const mot of motsCles(sousQuestion)) {
+      candidats.push(
+        ...scores
+          .filter((s) => s.element.texte.toLowerCase().includes(mot))
+          .slice(0, 2)
+      );
+    }
+    for (const candidat of candidats) {
       const numero = candidat.element.numero;
       const existant = parNumero.get(numero);
       if (!existant || candidat.score > existant.score) {
@@ -74,9 +93,10 @@ async function chercherExtraits(question, sousQuestions) {
       }
     }
   }
+  const limite = sousQuestions.length > 1 ? 8 : 6;
   return [...parNumero.values()]
     .sort((a, b) => b.score - a.score)
-    .slice(0, 6)
+    .slice(0, limite)
     .map(({ element, score }) => ({
       numero: element.numero,
       date: element.date,
